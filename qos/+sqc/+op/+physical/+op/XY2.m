@@ -17,8 +17,8 @@ classdef XY2 < sqc.op.physical.gate.X2m
     end
     methods (Hidden = true)
         function GenWave(obj)
+			obj.phase = obj.phi;
             GenWave@sqc.op.physical.gate.X2m(obj)
-            obj.phase = obj.phi;
         end
     end
 end

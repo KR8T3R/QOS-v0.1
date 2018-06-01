@@ -635,14 +635,8 @@ classdef gateOptimizer < qes.measurement.measurement
                 qubits{ii}.r_avg = rAvg;
             end
 
-			aczSettingsKey = sprintf('%s_%s',qubits{1}.name,qubits{2}.name);
-			QS = qes.qSettings.GetInstance();
-			scz = QS.loadSSettings({'shared','g_cz',aczSettingsKey});
-			aczSettings = sqc.qobj.aczSettings(aczSettingsKey);
-			fn = fieldnames(scz);
-			for ii = 1:numel(fn)
-				aczSettings.(fn{ii}) = scz.(fn{ii});
-			end
+			aczSettings = sqc.qobj.aczSettings(sprintf('%s_%s',qubits{1}.name,qubits{2}.name));
+            aczSettings.load();
 			qubits{1}.aczSettings = aczSettings;
 			
 			% R = sqc.measure.randBenchMarking4Opt(qubits,numGates,numShots);
@@ -721,14 +715,8 @@ classdef gateOptimizer < qes.measurement.measurement
                 qubits{ii}.r_avg = rAvg;
             end
 
-			aczSettingsKey = sprintf('%s_%s',qubits{1}.name,qubits{2}.name);
-			QS = qes.qSettings.GetInstance();
-			scz = QS.loadSSettings({'shared','g_cz',aczSettingsKey});
-			aczSettings = sqc.qobj.aczSettings();
-			fn = fieldnames(scz);
-			for ii = 1:numel(fn)
-				aczSettings.(fn{ii}) = scz.(fn{ii});
-			end
+			aczSettings = sqc.qobj.aczSettings(sprintf('%s_%s',qubits{1}.name,qubits{2}.name));
+            aczSettings.load();
 			qubits{1}.aczSettings = aczSettings;
 			
 			% R = sqc.measure.randBenchMarking4Opt(qubits,numGates,numShots);
@@ -798,27 +786,22 @@ classdef gateOptimizer < qes.measurement.measurement
                 qubits{ii}.r_avg = rAvg;
             end
 
-			aczSettingsKey = sprintf('%s_%s',qubits{1}.name,qubits{2}.name);
-			QS = qes.qSettings.GetInstance();
-			scz = QS.loadSSettings({'shared','g_cz',aczSettingsKey});
-			aczSettings = sqc.qobj.aczSettings();
-			fn = fieldnames(scz);
-			for ii = 1:numel(fn)
-				aczSettings.(fn{ii}) = scz.(fn{ii});
-			end
-			qubits{1}.aczSettings = aczSettings;
-			
-			% R = sqc.measure.randBenchMarking4Opt(qubits,numGates,10);
-            R = sqc.measure.randBenchMarkingFS(qubits,numGates,numShots);
-			
-			phase1 = qes.expParam(aczSettings,'dynamicPhase(1)');
-			phase1.offset = aczSettings.dynamicPhase(1);
-			
-			phase2 = qes.expParam(aczSettings,'dynamicPhase(2)');
-			phase2.offset = aczSettings.dynamicPhase(2);
-            
-            amplitude = qes.expParam(aczSettings,'amp');
-			amplitude.offset = aczSettings.amp;
+			aczSettings = sqc.qobj.aczSettings(sprintf('%s_%s',qubits{1}.name,qubits{2}.name));
+            aczSettings.load();
+
+            function leakage = measureLeakage()
+                qubits{1}.aczSettings = aczSettings;
+                X1 = gate.X(qubits{1});
+                X2 = gate.X(qubits{2});
+                CZ = gate.CZ(qubits{1},qubits{2});
+                proc = (X1.*X2)*CZ;
+                proc.Run();
+                R = measure.resonatorReadout_ss(qubits{2}); 
+                R.state = 1;
+                R.delay = proc.length;
+                leakage = R();
+            end
+            m = qes.measurement.measureByFunction(@measureLeakage);
             
             thf = qes.expParam(aczSettings,'thf');
 			thf.offset = aczSettings.thf;
@@ -832,41 +815,30 @@ classdef gateOptimizer < qes.measurement.measurement
             lam3 = qes.expParam(aczSettings,'lam3');
 			lam3.offset = aczSettings.lam3;
             
-			f = qes.expFcn([phase1,phase2,amplitude,thf,thi,lam2,lam3],R);
-
-            x0 = [-0.1,-0.1,-0.02*aczSettings.amp,-0.2,-0.2,-0.2,-0.2;...
-                    -0.1,-0.1,-0.02*aczSettings.amp,-0.2,-0.2,-0.2,0.2;...
-                    -0.1,-0.1,-0.02*aczSettings.amp,-0.2,-0.2,0.2,0.2;...
-                    -0.1,-0.1,-0.02*aczSettings.amp,-0.2,0.2,0.2,0.2;...
-                    -0.1,-0.1,-0.02*aczSettings.amp,0.2,0.2,0.2,0.2;...
-                    -0.1,-0.1,0.02*aczSettings.amp,0.2,0.2,0.2,0.2;...
-                    -0.1,0.1,0.02*aczSettings.amp,0.2,0.2,0.2,0.2;...
-                    0.1,0.1,0.02*aczSettings.amp,0.2,0.2,0.2,0.2];
+			f = qes.expFcn([thf,thi,lam2,lam3],m);
+            x0 = [0.7,-0.1,-0.4,-0.2;...
+                  0.7,-0.1,-0.4,0.2;...
+                  0.7,-0.1,0.1,0.2;...
+                  0.7,0.15,0.1,0.2;...
+                  1.2,0.15,0.1,0.2];
             
-            tolX = [pi/5e4,pi/5e4,1,1e-4,1e-4,1e-4,1e-4];
+            tolX = [1e-4,1e-4,1e-4,1e-4];
             tolY = [1e-4];
             
             h = qes.ui.qosFigure(sprintf('Gate Optimizer | %s%s CZ', qubits{1}.name, qubits{2}.name),false);
-            axs(1) = subplot(4,2,8,'Parent',h);
-            axs(2) = subplot(4,2,7);
-            axs(3) = subplot(4,2,6);
-            axs(4) = subplot(4,2,5);
-            axs(5) = subplot(4,2,4);
-            axs(6) = subplot(4,2,3);
-            axs(7) = subplot(4,2,2);
-            axs(8) = subplot(4,2,1);
+            axs(1) = subplot(3,2,5,'Parent',h);
+            axs(2) = subplot(3,2,4);
+            axs(3) = subplot(3,2,3);
+            axs(4) = subplot(3,2,2);
+            axs(5) = subplot(3,2,1);
             [optParams, x_trace, y_trace, n_feval] = qes.util.NelderMead(f.fcn, x0, tolX, tolY, maxFEval, axs);
             fval = y_trace(end);
             fval0 = y_trace(1);
 
 			if fval > fval0
-               error('Optimization failed: final fidelity worse than initial fidelity, registry not updated.');
+               error('Optimization failed: no convergence, registry not updated.');
             end
             % note: aczSettings is a handle class
-            aczSettings.dynamicPhase = aczSettings.dynamicPhase - 2*pi*floor(aczSettings.dynamicPhase/(2*pi));
-			QS.saveSSettings({'shared','g_cz',aczSettingsKey,'dynamicPhase'},...
-								aczSettings.dynamicPhase);
-            QS.saveSSettings({'shared','g_cz',aczSettingsKey,'amp'},aczSettings.amp);
             QS.saveSSettings({'shared','g_cz',aczSettingsKey,'thf'},aczSettings.thf);
             QS.saveSSettings({'shared','g_cz',aczSettingsKey,'thi'},aczSettings.thi);
             QS.saveSSettings({'shared','g_cz',aczSettingsKey,'lam2'},aczSettings.lam2);
@@ -878,7 +850,7 @@ classdef gateOptimizer < qes.measurement.measurement
 			figFileName = ['CZGateOpt',TimeStamp,'.fig'];
 			sessionSettings = QS.loadSSettings;
 			hwSettings = QS.loadHwSettings;
-			notes = 'CZGateOpt';
+			notes = 'CZGateLeakageOpt';
             save(fullfile(dataPath,dataFileName),'optParams','x_trace','y_trace','sessionSettings','hwSettings','notes');
 			try
 				saveas(h,fullfile(dataPath,figFileName));
@@ -902,14 +874,8 @@ classdef gateOptimizer < qes.measurement.measurement
                 qubits{ii}.r_avg = rAvg;
             end
 
-			aczSettingsKey = sprintf('%s_%s',qubits{1}.name,qubits{2}.name);
-			QS = qes.qSettings.GetInstance();
-			scz = QS.loadSSettings({'shared','g_cz',aczSettingsKey});
-			aczSettings = sqc.qobj.aczSettings();
-			fn = fieldnames(scz);
-			for ii = 1:numel(fn)
-				aczSettings.(fn{ii}) = scz.(fn{ii});
-			end
+			aczSettings = sqc.qobj.aczSettings(sprintf('%s_%s',qubits{1}.name,qubits{2}.name));
+            aczSettings.load();
 			qubits{1}.aczSettings = aczSettings;
 			
 			% R = sqc.measure.randBenchMarking4Opt(qubits,numGates,10);

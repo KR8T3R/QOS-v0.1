@@ -2,7 +2,7 @@ function varargout = s21_rAmp(varargin)
 % scan resonator s21 vs frequency and raadout amplitude(iq), no qubit drive
 % 
 % <_o_> = s21_rAmp('qubit',_c|o_,...
-%       'freq',[_f_],'amp',<[_f_]>,...
+%       'freq',[_f_],'amp',<[_f_]>,'updateSettings',<_b_>,'isDip',<_b_>,...
 %       'notes',<_c_>,'gui',<_b_>,'save',<_b_>)
 % _f_: float
 % _i_: integer
@@ -22,7 +22,8 @@ function varargout = s21_rAmp(varargin)
     import sqc.*
     import sqc.op.physical.*
     
-    args = util.processArgs(varargin,{'amp',[],'r_avg',[],'gui',false,'notes','','save',true});
+    args = util.processArgs(varargin,{'amp',[],'r_avg',[],'gui',false,'notes','',...
+		'save',true,'updateSettings',false,'isDip',true});
     q = data_taking.public.util.getQubits(args,{'qubit'});
     
     data_taking.public.util.setZDC(q); %add by GM, 20170415
@@ -71,5 +72,24 @@ function varargout = s21_rAmp(varargin)
     e.notes = args.notes;
     e.addSettings({'fcn','args'},{fcn_name,args});
     e.Run();
+	if args.updateSettings && numel(args.amp) == 1
+		data = abs(e.data{1});
+		if args.isDip
+			data = -data;
+		end
+		[~,ind] = max(data);
+		peakFreq = args.freq(ind);
+		if ~args.gui
+			h = qes.ui.qosFigure(sprintf('S21 vs Amp. | %s', q.name),true);
+			ax = axes('parent',h);
+			plot(ax,args.freq/1e9,data,'-b');
+			hold(ax,'on');
+			plot(ax,[peakFreq,peakFreq]/1e9,get(ax,'YLim'),'--r');
+			xlabel(ax,'frequency(GHz)');
+			ylabel(ax,'|S21|');
+		end
+		QS = qes.qSettings.GetInstance();
+		QS.saveSSettings({q.name,'r_fr'},peakFreq);
+	end
     varargout{1} = e;
 end

@@ -3,7 +3,8 @@ function varargout = jpaBringupADDA(varargin)
 % with DAC, run in EXACTLY the same way as when the jpa is used for a working qubit.
 %
 % <_o_> = jpaBringup('jpa',_c&o_,...
-%       'signalAmp',[_f_],signalFreq',[_f_],'signalPower',<_f_>,'signalSbFreq',<_f_>,...
+%       'signalAmp',[_f_],signalFreq',[_f_],'signalPower',<_f_>,...
+%		'signalSbFreq',<_f_>,'signalFc',<_f_>,...
 %       'signalLn',_i_,'rAvg',<_i_>,...
 %       'biasAmp',<[_f_]>,'pumpAmp',<[_f_]>,...
 %       'pumpFreq',<[_f_]>,'pumpPower',<[_f_]>,...
@@ -24,7 +25,7 @@ function varargout = jpaBringupADDA(varargin)
     fcn_name = 'data_taking.public.jpa.jpaBringupADDA'; % this and args will be saved with data
     import qes.*
     
-    args = util.processArgs(varargin,{'signalPower',0,'signalSbFreq',0,...
+    args = util.processArgs(varargin,{'signalPower',0,'signalSbFreq',[],'signalFc',[]...
         'biasAmp',[],'pumpAmp',[],'pumpFreq',[],'pumpPower',[],...
         'rAvg',500,'gui',false,'notes','','save',true});
     jpa = data_taking.public.util.getJPAs(args,{'jpa'});
@@ -108,16 +109,32 @@ function varargout = jpaBringupADDA(varargin)
         s = [s,s_];
     end
     if numel(args.signalFreq) == 1
-        virtualQubit.r_fc = args.signalFreq-args.signalSbFreq;
-        virtualQubit.r_freq = args.signalFreq;
+		if ~isempty(args.signalSbFreq)
+			if ~isempty(args.signalFc)
+				warning('both signalSbFreq and signalFc are given, only signalSbFreq is used.');
+			end
+			virtualQubit.r_fc = args.signalFreq-args.signalSbFreq;
+			virtualQubit.r_freq = args.signalFreq;
+		else ~isempty(args.signalFc)
+			virtualQubit.r_fc = args.signalFc;
+			virtualQubit.r_freq = args.signalFreq;
+		else
+			error('both signalSbFreq and signalFc are not specified.');
+		end
     elseif numel(args.signalFreq)> 1
-        x = expParam(virtualQubit,'r_freq');
-        x.name = 'signal frequency(Hz)';
-        x_s = expParam(virtualQubit,'r_fc');
-        x_s.offset = -args.signalSbFreq;
-        s_ = sweep([x,x_s]);
-        s_.vals = {args.signalFreq,args.signalFreq};
-        s = [s,s_];
+		x = expParam(virtualQubit,'r_freq');
+		x.name = 'signal frequency(Hz)';
+		if isempty(args.signalFc)
+			x_s = expParam(virtualQubit,'r_fc');
+			x_s.offset = -args.signalSbFreq;
+			s_ = sweep([x,x_s]);
+			s_.vals = {args.signalFreq,args.signalFreq};
+		else % fixed r_fc % 2018-04-06
+			virtualQubit.r_fc = args.signalFc;
+			s_ = sweep(x);
+			s_.vals = {args.signalFreq};
+		end
+		s = [s,s_];
     end
 
     if isempty(s) % we need at least one sweep

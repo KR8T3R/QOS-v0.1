@@ -48,8 +48,10 @@ classdef ACZ < sqc.op.physical.operator
             
             numQs = numel(czs.qubits);
             qubits_ = cell(1,numQs);
+			
+			qRegs = sqc.qobj.qRegisters.GetInstance();
             for ii = 1:numQs
-                qubits_{ii} = sqc.util.qName2Obj(czs.qubits{ii});
+                qubits_{ii} = qRegs.get(czs.qubits{ii});
             end
             
             obj = obj@sqc.op.physical.operator(qubits_);
@@ -81,8 +83,7 @@ classdef ACZ < sqc.op.physical.operator
                 end
                 obj.maxF01 = maxF01;
                 obj.k = 1/sqrt(-zpa2f01(1));
-                xShift = sqc.util.zpa2f01XShift(qubits_{1});
-                if xShift > 0
+                if roots(polyder(zpa2f01)) + sqc.util.zpa2f01Shift(qubits_{1}) > 0
                     obj.k = -obj.k;
                 end
             else

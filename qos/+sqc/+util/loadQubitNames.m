@@ -20,7 +20,7 @@ function qNames = loadQubitNames()
     num_fields = numel(fnames);
     qNames = {};
     for ii = 1:num_fields
-        if ismember(fnames{ii},{'global','xTalk','data_path'}) ||...
+        if ismember(fnames{ii},{'shared','public','data_path'}) ||...
                 ~isstruct(s.(fnames{ii}))
             continue;
         end

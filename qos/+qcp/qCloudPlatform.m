@@ -60,8 +60,8 @@ classdef qCloudPlatform < handle
     methods (Access = private)
         function obj = qCloudPlatform(qCloudSettingsRoot)
             obj.qCloudSettingsRoot = qCloudSettingsRoot;
-%            obj.defaultResultMsgCN = qes.util.loadSettings(qCloudSettingsRoot, 'defaultResultMsgCN'); % now changed dynamically
-%            obj.defaultResultMsgEN = qes.util.loadSettings(qCloudSettingsRoot, 'defaultResultMsgEN');
+            obj.defaultResultMsgCN = qes.util.loadSettings(qCloudSettingsRoot, 'defaultResultMsgCN');
+            obj.defaultResultMsgEN = qes.util.loadSettings(qCloudSettingsRoot, 'defaultResultMsgEN');
             obj.singleTakeNumShots = qes.util.loadSettings(qCloudSettingsRoot, 'singleTakeNumShots');
             obj.wvSamplesTruncatePts = qes.util.loadSettings(qCloudSettingsRoot, 'wvSamplesTruncatePts');
             pushoverAPIKey = qes.util.loadSettings(qCloudSettingsRoot, {'pushover','key'});
@@ -632,36 +632,7 @@ classdef qCloudPlatform < handle
 %             if qTask.stats > 1e4
 %                 taskResult.singleShotEvents = [];
 %             end
-            taskResult.singleShotEvents(:,5001:end) = [];
-			
-			try 
-                notesCN_ = qes.util.loadSettings(obj.qCloudSettingsRoot, 'defaultResultMsgCN');
-                notesCN = '';
-				if iscell(notesCN_)
-					for ii = 1:numel(notesCN_)
-						notesCN = [notesCN,notesCN_{ii}];
-					end
-                end
-
-				taskResult.noteCN = [taskResult.noteCN, notesCN];
-            catch ME
-                obj.logger.warn('qCloud.runTask',...
-                    sprintf('load defaultResultMsgCN settings failed: %s', ME.message));
-            end
-			try 
-                notesEN_ = qes.util.loadSettings(obj.qCloudSettingsRoot, 'defaultResultMsgEN');
-                notesEN = '';
-				if iscell(notesEN_)
-					for ii = 1:numel(notesEN_)
-						notesEN = [notesEN,notesEN_{ii}];
-					end
-				end
-				taskResult.noteEN = [taskResult.noteEN, notesEN];
-            catch ME
-                obj.logger.warn('qCloud.runTask',...
-                    sprintf('load defaultResultMsgEN settings failed: %s', ME.message));
-            end
-			
+            taskResult.singleShotEvents = [];
             obj.connection.pushResult(taskResult);
             obj.logger.info('qCloud.runTask',sprintf('task: %0.0f done.', qTask.taskId));
         end
@@ -798,18 +769,8 @@ classdef qCloudPlatform < handle
             end
             obj.sysStatus.status = obj.status;
             obj.sysStatus.fridgeTemperature = feval(obj.temperatureReader);
-			try 
-                noticeEN = qes.util.loadSettings(obj.qCloudSettingsRoot, 'noticeEN');
-				obj.sysStatus.noticeEN = noticeEN;
-            catch ME
-				obj.sysStatus.noticeEN = 'Error!';
-                obj.logger.error('qCloud.updateSystemConfig',...
-                    sprintf('load noticeEN settings failed: %s', ME.message));
-                obj.logger.notify();
-            end
-            try 
-                noticeCN = qes.util.loadSettings(obj.qCloudSettingsRoot, 'noticeCN');
-				obj.sysStatus.noticeCN = noticeCN;
+            try % Chinese can not be handled by the saveJson function, thus noticeCN is stored in a different settings file
+				obj.sysStatus.noticeCN = qes.util.loadSettings(obj.qCloudSettingsRoot, 'noticeCN');
             catch ME
 				obj.sysStatus.noticeCN = 'Error!';
                 obj.logger.error('qCloud.updateSystemConfig',...

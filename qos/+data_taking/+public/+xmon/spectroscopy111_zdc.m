@@ -8,7 +8,7 @@ function varargout = spectroscopy111_zdc(varargin)
 % 
 % <_o_> = spectroscopy111_zdc('biasQubit',_c|o_,'biasAmp',<[_f_]>,...
 %       'driveQubit',_c|o_,'driveFreq',<[_f_]>,...
-%       'readoutQubit',_c|o_,'dataTyp',<_c_>,...
+%       'readoutQubit',_c|o_,'dataTyp',<_c_>,'updateReadoutFreq',<_b_>,...
 %       'notes',<_c_>,'gui',<_b_>,'save',<_b_>)
 % _f_: float
 % _i_: integer
@@ -28,7 +28,8 @@ import qes.*
 import sqc.*
 import sqc.op.physical.*
 
-args = util.processArgs(varargin,{'dataTyp','P','biasAmp',0,'driveFreq',[],'r_avg',[],'gui',false,'notes','','save',true});
+args = util.processArgs(varargin,{'dataTyp','P','biasAmp',0,'driveFreq',[],'r_avg',[],...
+		'updateReadoutFreq',<_b_>,false,'gui',false,'notes','','save',true});
 [readoutQubit, biasQubit, driveQubit] = data_taking.public.util.getQubits(...
     args,{'readoutQubit','biasQubit','driveQubit'});
 if isempty(args.driveFreq)
@@ -56,6 +57,12 @@ R.delay = X.length;
 X.Run(); % from this point on X will assume that the dc source and mw source are set
 x = expParam(X.zdc_src{1},'dcval');
 x.name = [biasQubit.name,' zdc bias amplitude'];
+function updateReadoutFrequency()
+	readoutQubit.r_freq = polyval(readoutQubit.r_zdc2fr,x.val);
+end
+if args.updateReadoutFreq && readoutQubit == biasQubit && ~isempty(readoutQubit.r_zdc2fr)
+	x.callbacks = @updateReadoutFrequency;
+end
 y = expParam(X,'mw_src_frequency');
 y.offset = -driveQubit.spc_sbFreq;
 y.name = [driveQubit.name,' driving frequency (Hz)'];

@@ -70,7 +70,7 @@ amp = logspace(log10(700),log10(15000),20);
 % amp = getQSettings('r_amp',q);
 rfreq = getQSettings('r_freq',q);
 freq = rfreq-1.5e6:0.15e6:rfreq+1e6;
-s21_rAmp('qubit',q,'freq',freq,'amp',amp,...
+s21_rAmp('qubit',q,'freq',freq,'amps',amp,...
       'notes','','gui',true,'save',true);
 %%
 q = 'q11';

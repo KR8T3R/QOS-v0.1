@@ -2,7 +2,7 @@ function varargout = s21_zdc(varargin)
 % scan resonator s21 vs frequency and qubit z dc bias
 % 
 % <_o_> = s21_zdc('qubit',_c|o_,...
-%       'freq',[_f_],'amp',[_f_],...
+%       'freq',[_f_],'amp',[_f_],'updateSettings',<_b_>,'isDip',<_b_>,...
 %       'notes',<_c_>,'gui',<_b_>,'save',<_b_>)
 % _f_: float
 % _i_: integer
@@ -22,7 +22,8 @@ function varargout = s21_zdc(varargin)
     import sqc.*
     import sqc.op.physical.*
     
-    args = util.processArgs(varargin,{'gui',false,'notes','','save',true});
+    args = util.processArgs(varargin,{'gui',false,'notes','','save',true,...
+		,'updateSettings',false,'isDip',true});
     q = data_taking.public.util.getQubits(args,{'qubit'});
     
     dcSrc = qHandle.FindByClassProp('qes.hwdriver.hardware','name',q.channels.z_dc.instru);
@@ -58,6 +59,30 @@ function varargout = s21_zdc(varargin)
     e.notes = args.notes;
     e.addSettings({'fcn','args'},{fcn_name,args});
     e.Run();
+	if args.updateSettings && numel(args.amp) > 2
+		data = abs(e.data{1});
+		if args.isDip
+			data = -data;
+		end
+		peakFreqs = nan(1,args.amp);
+		for ii = 1:numel(args.amp)
+			[~,ind] = max(data(ii,:));
+			peakFreqs(ii) = args.freq(ind);
+		end
+		zdc2fr = polyfit(args.amp,peakFreqs,2);
+		if ~args.gui
+			h = qes.ui.qosFigure(sprintf('S21 vs ZDC. | %s', q.name),true);
+			ax = axes('parent',h);
+			hs = pcolor(ax,args.amp,args.freq,data); set(hs,'EdgeColor','none');
+			hold(ax,'on');
+			plot(ax,args.amp,peakFreqs/1e9,'+','Color',[1,1,1]);
+			plot(ax,args.amp,polyval(f,args.amp)/1e9,'-','Color',[1,1,1]);
+			xlabel(ax,'zdc amplitude');
+			ylabel(ax,'frequency (GHz)');
+		end
+		QS = qes.qSettings.GetInstance();
+		QS.saveSSettings({q.name,'r_zdc2fr'},zdc2fr);
+	end
     varargout{1} = e;
     data_taking.public.util.setZDC(q);
 end

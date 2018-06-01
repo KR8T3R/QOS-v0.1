@@ -76,7 +76,9 @@ function varargout = acz_ampLength(varargin)
     end
     isTomography = false;
     switch args.dataTyp
-        case 'P'
+        case 'P' 
+            % in case of measure |2> state leakage, rq must be the qubit
+            % with lower f01 frequency and readout state must be |0>
             R = measure.resonatorReadout_ss(rq); 
             R.state = 1;
             R.name = [rq.name,' ',R.name];

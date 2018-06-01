@@ -78,7 +78,7 @@ bias2f01 = @(x)x*1e9; % in case of no bias2f01 transformation needed.
 bias2f01 = @(x) polyval([-1.09978,-9.2548e3,5.08577e9],x);
 
 figure();
-h = pcolor(bias2f01(bias)/1e9,time,z'); set(h,'EdgeColor','none')
+h = pcolor(bias2f01(bias)/1e9,time,z'); set(h,'EdgeColor','none');
 hold on;
 errorbar(bias2f01(bias)/1e9,td,td-wci(:,1)',wci(:,2)'-td,'ro-','MarkerSize',5,'MarkerFaceColor',[1,1,1]);
 xlabel('f01 (GHz)');
