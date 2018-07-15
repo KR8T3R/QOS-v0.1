@@ -52,6 +52,8 @@ classdef operator < handle %  & matlab.mixin.Copyable
         sbFreq
         z_wv = {}        % order: first applied first to follow the pulse generation time order convention
 		z_daChnl = {}
+        
+        firstRun = true
     end
     properties (SetAccess = protected, GetAccess = protected)
 		zdc_amp
@@ -359,45 +361,47 @@ classdef operator < handle %  & matlab.mixin.Copyable
 			zXTalkQubits2Add = {};
 			xTalkSrcIdx = [];
 			xTalkCoef = [];
-			for ii = 1:numel(obj.z_wv) % correct z cross talk
-                if isempty(obj.z_wv{ii})
-                    continue;
-                end
-                xTalkData = reshape(obj.qubits{ii}.xTalk_z,3,[]);
-                if isempty(xTalkData)
-                    continue;
-                end
-				xTalk_zQubit_names = xTalkData(1,:);
-				for jj = 1: numel(xTalk_zQubit_names)
-                    idx = qes.util.find(xTalk_zQubit_names{jj},obj.all_qubits);
-					if isempty(idx) %to future version: move all settings constraints into settings manager,
-								% implemented as a database, phase out the necessity to do settings check
-								% in operations.
-						throw(MException('sqc_op_pysical_operator:invalidSetting',...
-							sprintf('the crosstalk qubit %s of qubit %s dose not exist or not a selected/working qubit.',...
-								xTalk_zQubit_names{jj},obj.qubits{ii}.name)));
-                    end
-                    xQ = obj.all_qubits{idx};
-					xtalk = xTalkData{2,jj};
-                    if xtalk == 0
+            if obj.firstRun
+                for ii = 1:numel(obj.z_wv) % correct z cross talk
+                    if isempty(obj.z_wv{ii})
                         continue;
                     end
-					q2c_idx = qes.util.find(xTalk_zQubit_names{jj},obj.qubits);
-					if isempty(q2c_idx)
-						zXTalkQubits2Add = [zXTalkQubits2Add,{xQ}];
-						xTalkCoef = [xTalkCoef,xtalk];
-						xTalkSrcIdx = [xTalkSrcIdx,ii];
-						continue;
-					end
-					if isempty(obj.z_wv{q2c_idx})
-						obj.z_wv{q2c_idx} = -xtalk*copy(obj.z_wv{ii});
-                        da = qes.qHandle.FindByClassProp('qes.hwdriver.hardware',...
-                            'name',obj.qubits{q2c_idx}.channels.z_pulse.instru);
-                        obj.z_daChnl{1,q2c_idx} = da.GetChnl(obj.qubits{q2c_idx}.channels.z_pulse.chnl);
-					else
-						obj.z_wv{q2c_idx} = obj.z_wv{q2c_idx}-xtalk*copy(obj.z_wv{ii});
-					end
-				end
+                    xTalkData = reshape(obj.qubits{ii}.xTalk_z,3,[]);
+                    if isempty(xTalkData)
+                        continue;
+                    end
+                    xTalk_zQubit_names = xTalkData(1,:);
+                    for jj = 1: numel(xTalk_zQubit_names)
+                        idx = qes.util.find(xTalk_zQubit_names{jj},obj.all_qubits);
+                        if isempty(idx) %to future version: move all settings constraints into settings manager,
+                                    % implemented as a database, phase out the necessity to do settings check
+                                    % in operations.
+                            throw(MException('sqc_op_pysical_operator:invalidSetting',...
+                                sprintf('the crosstalk qubit %s of qubit %s dose not exist or not a selected/working qubit.',...
+                                    xTalk_zQubit_names{jj},obj.qubits{ii}.name)));
+                        end
+                        xQ = obj.all_qubits{idx};
+                        xtalk = xTalkData{2,jj};
+                        if xtalk == 0
+                            continue;
+                        end
+                        q2c_idx = qes.util.find(xTalk_zQubit_names{jj},obj.qubits);
+                        if isempty(q2c_idx)
+                            zXTalkQubits2Add = [zXTalkQubits2Add,{xQ}];
+                            xTalkCoef = [xTalkCoef,xtalk];
+                            xTalkSrcIdx = [xTalkSrcIdx,ii];
+                            continue;
+                        end
+                        if isempty(obj.z_wv{q2c_idx})
+                            obj.z_wv{q2c_idx} = -xtalk*copy(obj.z_wv{ii});
+                            da = qes.qHandle.FindByClassProp('qes.hwdriver.hardware',...
+                                'name',obj.qubits{q2c_idx}.channels.z_pulse.instru);
+                            obj.z_daChnl{1,q2c_idx} = da.GetChnl(obj.qubits{q2c_idx}.channels.z_pulse.chnl);
+                        else
+                            obj.z_wv{q2c_idx} = obj.z_wv{q2c_idx}-xtalk*copy(obj.z_wv{ii});
+                        end
+                    end
+                end
             end
             for ii = 1:numel(obj.z_wv)
                 if isempty(obj.z_wv{ii})
@@ -412,7 +416,7 @@ classdef operator < handle %  & matlab.mixin.Copyable
                 end
             end
             
-            % we don't care other qubits, if we do the following, a process
+            % we don't care about other qubits, if we do the following, a process
             % can only run onece
 %             % removed temporarily, 2017/12/07
 % 			zWv2Add = {};
@@ -437,6 +441,8 @@ classdef operator < handle %  & matlab.mixin.Copyable
 % 				addedZWvDAChnls{ii}.SendWave(DASequence,true);
 %                 % disp(['z xtalk:', num2str(addedZWvDAChnls{ii}.chnl)])
 % 			end
+
+            obj.firstRun = false;
         end
         function delete(obj)
 %             for ii = 1:numel(obj.zdc_src)	% obsolete, taken of dc and mw chnls are now non exclusive, 17/04/01
