@@ -348,11 +348,7 @@ classdef operator < handle %  & matlab.mixin.Copyable
 				DASequence = qes.waveform.DASequence(obj.xy_daChnl{1,ii}.chnl,obj.xy_wv{ii});
 				DASequence.outputDelay = [obj.delay_xy_i(ii),obj.delay_xy_q(ii)]...
                     + obj.qubits{ii}.syncDelay_xy;
-                try
 				obj.xy_daChnl{1,ii}.SendWave(DASequence,true,obj.loFreq(ii),obj.loPower(ii),obj.sbFreq(ii)); % send I
-                catch
-                    kkk = 1;
-                end
 				obj.xy_daChnl{2,ii}.SendWave(DASequence,false,obj.loFreq(ii),obj.loPower(ii),obj.sbFreq(ii)); % send Q
                 if obj.logSequenceSamples
                     obj.sequenceSampleLogger.put(obj.qubits{ii}.name,DASequence,true);
@@ -360,49 +356,49 @@ classdef operator < handle %  & matlab.mixin.Copyable
             end
             
             % removed temporarily, 2017/12/07
-% 			zXTalkQubits2Add = {};
-% 			xTalkSrcIdx = [];
-% 			xTalkCoef = [];
-% 			for ii = 1:numel(obj.z_wv) % correct z cross talk
-%                 if isempty(obj.z_wv{ii})
-%                     continue;
-%                 end
-%                 xTalkData = reshape(obj.qubits{ii}.xTalk_z,3,[]);
-%                 if isempty(xTalkData)
-%                     continue;
-%                 end
-% 				xTalk_zQubit_names = xTalkData(1,:);
-% 				for jj = 1: numel(xTalk_zQubit_names)
-%                     idx = qes.util.find(xTalk_zQubit_names{jj},obj.all_qubits);
-% 					if isempty(idx) %to future version: move all settings constraints into settings manager,
-% 								% implemented as a database, phase out the necessity to do settings check
-% 								% in operations.
-% 						throw(MException('sqc_op_pysical_operator:invalidSetting',...
-% 							sprintf('the crosstalk qubit %s of qubit %s dose not exist or not a selected/working qubit.',...
-% 								xTalk_zQubit_names{jj},obj.qubits{ii}.name)));
-%                     end
-%                     xQ = obj.all_qubits{idx};
-% 					xtalk = xTalkData{2,jj};
-%                     if xtalk == 0
-%                         continue;
-%                     end
-% 					q2c_idx = qes.util.find(xTalk_zQubit_names{jj},obj.qubits);
-% 					if isempty(q2c_idx)
-% 						zXTalkQubits2Add = [zXTalkQubits2Add,{xQ}];
-% 						xTalkCoef = [xTalkCoef,xtalk];
-% 						xTalkSrcIdx = [xTalkSrcIdx,ii];
-% 						continue;
-% 					end
-% 					if isempty(obj.z_wv{q2c_idx})
-% 						obj.z_wv{q2c_idx} = -xtalk*copy(obj.z_wv{ii});
-%                         da = qes.qHandle.FindByClassProp('qes.hwdriver.hardware',...
-%                             'name',obj.qubits{q2c_idx}.channels.z_pulse.instru);
-%                         obj.z_daChnl{1,q2c_idx} = da.GetChnl(obj.qubits{q2c_idx}.channels.z_pulse.chnl);
-% 					else
-% 						obj.z_wv{q2c_idx} = obj.z_wv{q2c_idx}-xtalk*copy(obj.z_wv{ii});
-% 					end
-% 				end
-%             end 
+			zXTalkQubits2Add = {};
+			xTalkSrcIdx = [];
+			xTalkCoef = [];
+			for ii = 1:numel(obj.z_wv) % correct z cross talk
+                if isempty(obj.z_wv{ii})
+                    continue;
+                end
+                xTalkData = reshape(obj.qubits{ii}.xTalk_z,3,[]);
+                if isempty(xTalkData)
+                    continue;
+                end
+				xTalk_zQubit_names = xTalkData(1,:);
+				for jj = 1: numel(xTalk_zQubit_names)
+                    idx = qes.util.find(xTalk_zQubit_names{jj},obj.all_qubits);
+					if isempty(idx) %to future version: move all settings constraints into settings manager,
+								% implemented as a database, phase out the necessity to do settings check
+								% in operations.
+						throw(MException('sqc_op_pysical_operator:invalidSetting',...
+							sprintf('the crosstalk qubit %s of qubit %s dose not exist or not a selected/working qubit.',...
+								xTalk_zQubit_names{jj},obj.qubits{ii}.name)));
+                    end
+                    xQ = obj.all_qubits{idx};
+					xtalk = xTalkData{2,jj};
+                    if xtalk == 0
+                        continue;
+                    end
+					q2c_idx = qes.util.find(xTalk_zQubit_names{jj},obj.qubits);
+					if isempty(q2c_idx)
+						zXTalkQubits2Add = [zXTalkQubits2Add,{xQ}];
+						xTalkCoef = [xTalkCoef,xtalk];
+						xTalkSrcIdx = [xTalkSrcIdx,ii];
+						continue;
+					end
+					if isempty(obj.z_wv{q2c_idx})
+						obj.z_wv{q2c_idx} = -xtalk*copy(obj.z_wv{ii});
+                        da = qes.qHandle.FindByClassProp('qes.hwdriver.hardware',...
+                            'name',obj.qubits{q2c_idx}.channels.z_pulse.instru);
+                        obj.z_daChnl{1,q2c_idx} = da.GetChnl(obj.qubits{q2c_idx}.channels.z_pulse.chnl);
+					else
+						obj.z_wv{q2c_idx} = obj.z_wv{q2c_idx}-xtalk*copy(obj.z_wv{ii});
+					end
+				end
+            end
             for ii = 1:numel(obj.z_wv)
                 if isempty(obj.z_wv{ii})
                     continue;
@@ -416,7 +412,9 @@ classdef operator < handle %  & matlab.mixin.Copyable
                 end
             end
             
-            % removed temporarily, 2017/12/07
+            % we don't care other qubits, if we do the following, a process
+            % can only run onece
+%             % removed temporarily, 2017/12/07
 % 			zWv2Add = {};
 % 			addedZWvDAChnls = {};
 % 			addedZWvSyncDelay = [];

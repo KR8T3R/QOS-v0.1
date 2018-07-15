@@ -21,17 +21,24 @@ classdef processTomography < qes.measurement.measurement
 	properties (SetAccess = private)
 		qubits
         process
+		% added: 2018-07-08
+		preProcess
     end
     properties (GetAccess = private, SetAccess = private)
 		stateTomoObj
 		statePrepGates
     end
     methods
-        function obj = processTomography(qubits, process)
+        function obj = processTomography(qubits, process, preProcess)
 			if ~isa(process,'sqc.op.physical.operator')
 				throw(MException('QOS_processTomography:invalidInput',...
 						'the input is not a valid quantum operator.'));
 			end
+			if nargin > 2 && ~isa(preProcess,'sqc.op.physical.operator')
+				throw(MException('QOS_processTomography:invalidInput',...
+						'the input is not a valid quantum operator.'));
+			end
+			
 			import sqc.op.physical.gate.*
 			if ~iscell(qubits)
                 qubits = {qubits};
@@ -45,6 +52,9 @@ classdef processTomography < qes.measurement.measurement
             end
             obj = obj@qes.measurement.measurement([]);
             obj.process = process;
+			if nargin > 2
+				obj.preProcess = preProcess;
+			end
 			obj.qubits = qubits;
 			numTomoQs = numel(obj.qubits);
             
@@ -86,7 +96,8 @@ classdef processTomography < qes.measurement.measurement
 				for ii = 2:numTomoQs
 					P = P.*pGates{ii};
                 end
-                P = P*obj.process;
+				% add preProcess, 2018-07-06
+                P = obj.preProcess*P*obj.process;
 				obj.stateTomoObj.setProcess(P);
 				data(idx,:,:) = obj.stateTomoObj();
 			end

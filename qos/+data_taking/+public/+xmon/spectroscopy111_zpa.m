@@ -65,7 +65,8 @@ end
 
 x = expParam(@procFactory,true);
 x.name = [biasQubit.name,' z bias amplitude'];
-y = expParam(X,'mw_src_frequency');
+y = expParam(X.mw_src{1},'frequency');
+% y = expParam(X,'mw_src_frequency'); % change mw_src_frequency is problematic, Yulin Wu 2018/2/18
 y.offset = -driveQubit.spc_sbFreq;
 y.name = [driveQubit.name,' driving frequency (Hz)'];
 y.callbacks ={@(x_)x.fcnval.Run()};

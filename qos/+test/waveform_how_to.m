@@ -11,12 +11,12 @@ seq = [seq,wv2,wv3,wv4];
 
 % [step 3] make a DA sequence and mount calibration settings,
 % Note: calibration settings are hardware channel specific, that's why they
-% can not be set at step 1 or step 2: while a sequence may be used anyhere,
+% can not be set at step 1 or step 2: while a sequence may be used anywhere,
 % even shared between channels, a DASequence is bounded to a specific
 % hardware channel.
 chnl = 1;
 DASequence = qes.waveform.DASequence(chnl,seq);
-% set transfer funciton, in production, it is done like this:
+% set transfer function, in production, it is done like this:
 % DASequence.xfrFunc = TheDAChannel.xfrFunc;
 % DASequence.padLength = TheDAChannel.padLength;
 % the following is just for this demo
@@ -42,7 +42,6 @@ IorQ = 1; % 1 for I, 2 for Q
 samples = samples(IorQ,:);
 figure();plot(samples);
 
-%%
 %% 
 % numeric waveform test
 modelSamples = [0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,0];
