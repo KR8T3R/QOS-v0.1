@@ -354,7 +354,7 @@ classdef iqMixerCalibrator < qes.measurement.measurement
 %                 end
 %                 dy_=dy;
 %             end
-%             
+%
 %             z = x
 %% IQ balance method       
 %             p=qes.expParam(IQ,'balance');
@@ -405,14 +405,14 @@ classdef iqMixerCalibrator < qes.measurement.measurement
 %                 dx_=dx;
 %                 dy_=dy;
 %             end
-%             
+%
 %             f1([x,y])
-%             
+%
 %             i0=round(x)
 %             q0=round(y)
-%             
+%
 %             obj.iZero=i0;
-%             obj.qZero=q0;            
+%             obj.qZero=q0;
 %%			
 			if obj.showProcess
                 f([0,0]);

@@ -392,13 +392,14 @@ classdef operator < handle %  & matlab.mixin.Copyable
                             xTalkSrcIdx = [xTalkSrcIdx,ii];
                             continue;
                         end
+                        r = -xtalk;
                         if isempty(obj.z_wv{q2c_idx})
-                            obj.z_wv{q2c_idx} = -xtalk*copy(obj.z_wv{ii});
+                            obj.z_wv{q2c_idx} = r*copy(obj.z_wv{ii});
                             da = qes.qHandle.FindByClassProp('qes.hwdriver.hardware',...
                                 'name',obj.qubits{q2c_idx}.channels.z_pulse.instru);
                             obj.z_daChnl{1,q2c_idx} = da.GetChnl(obj.qubits{q2c_idx}.channels.z_pulse.chnl);
                         else
-                            obj.z_wv{q2c_idx} = obj.z_wv{q2c_idx}-xtalk*copy(obj.z_wv{ii});
+                            obj.z_wv{q2c_idx} = obj.z_wv{q2c_idx}+r*copy(obj.z_wv{ii});
                         end
                     end
                 end
@@ -418,7 +419,6 @@ classdef operator < handle %  & matlab.mixin.Copyable
             
             % we don't care about other qubits, if we do the following, a process
             % can only run onece
-%             % removed temporarily, 2017/12/07
 % 			zWv2Add = {};
 % 			addedZWvDAChnls = {};
 % 			addedZWvSyncDelay = [];
@@ -426,7 +426,7 @@ classdef operator < handle %  & matlab.mixin.Copyable
 % 				add2Idx = qes.util.find(zXTalkQubits2Add{ii},zXTalkQubits2Add(1:ii-1));
 % 				if ~isempty(add2Idx)
 %                     add2Idx = add2Idx(1);
-%                     zWv2Add{add2Idx} = zWv2Add{add2Idx} -xTalkCoef(ii)*copy(obj.z_wv{xTalkSrcIdx(ii)});
+%                     zWv2Add{add2Idx} = zWv2Add{add2Idx} +(-xTalkCoef(ii))*copy(obj.z_wv{xTalkSrcIdx(ii)});
 % 				else
 % 					zWv2Add{end+1} = obj.z_wv{xTalkSrcIdx(ii)}*(-xTalkCoef(ii)); 
 % 					da = qes.qHandle.FindByClassProp('qes.hwdriver.hardware',...
