@@ -74,7 +74,7 @@ classdef ACZ < sqc.op.physical.operator
                 zpa2f01 = qubits_{1}.zpls_amp2f01;
                 maxF01 = polyval(zpa2f01,roots(polyder(zpa2f01)));
                 if qubits_{1}.f01 > maxF01
-                    if obj.f01 - maxF01 > 3e6
+                    if qubits_{1}.f01 - maxF01 > 3e6
                         throw(MException('QOS_ACZ:invalidzplsamp2f01',...
                             sprintf('f01 greater than maximum of zpls_amp2f01(>3Mz) for qubit %s.', q.name)));
                     else
